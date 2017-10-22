@@ -13,8 +13,9 @@
 #include <vector>
 
 #include "ib/config.h"
-#include "ib/logger.h"
 #include "ib/entropy.h"
+#include "ib/logger.h"
+#include "ib/tiny_timer.h"
 #include "centipede/backend/i_webserver_backend.h"
 
 #define POST_BUFFER_SIZE 1024
@@ -124,9 +125,9 @@ public:
 			  &addr->sin_addr,
 			  ipbuf, INET6_ADDRSTRLEN);
 		ipbuf[INET6_ADDRSTRLEN] = 0;
-		Logger::info("(webserver) %:% requests %",
+/*		Logger::info("(webserver) %:% requests %",
 			ipbuf, ntohs(addr->sin_port),
-			url);
+			url);*/
 		return true;
 	}
 
@@ -172,6 +173,7 @@ public:
 
 	int geturl(const string& url, const map<string, string>& args,
 		   string* output) {
+		// TinyTimer tt("geturl");
 		unique_lock<mutex> ul(_mutex);
 		assert(output);
 		vector<string> pieces;
@@ -443,7 +445,7 @@ static int send_page(struct MHD_Connection *connection,
 		MHD_RESPMEM_MUST_COPY);
 	int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
 	MHD_destroy_response(response);
-	Logger::info("(webserver) reply length %", output.length());
+	//Logger::info("(webserver) reply length %", output.length());
 	return ret;
 }
 
@@ -464,7 +466,6 @@ static int http_serv(void * cls,
                      size_t * upload_data_size,
                      void ** ptr) {
 	string output;
-	Logger::info("req: %", url);
 	WebServer* webserver = static_cast<WebServer*>(cls);
 	if (!webserver->log_connection(connection, url, method, &output)) {
 		return send_page(connection, output);
